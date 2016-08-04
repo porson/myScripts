@@ -1,0 +1,119 @@
+[ -d log ]||mkdir log
+#########################################
+nc_front(){
+
+clear
+
+local break_times=0
+local timer=0
+local button_q=null
+
+local ipaddr=$1
+local port=$2
+
+while true
+do	
+	clear
+	((timer++))
+	echo -e "\e[36mMonitor has run $timer seconds, input 'q' to return main menu. \e[0m"
+	echo
+	read -s -n1 -t1 button_q
+	if [[ "$button_q" = "q" ]]
+	then
+		read -n1 -t3 -s -p "Do you want to quit [Y/N]?" answer
+		case $answer in
+		Y|y)
+			echo
+			echo
+			echo -e  "\t\t\tThanks for your using.Bye!"
+			echo
+			exit;;
+		N|n)	
+			continue
+			;;
+		*)	
+			continue
+			;;
+		esac
+	fi
+
+	if !(nc -z $ipaddr $port &>/dev/null)
+	then
+		((break_times++))
+		((timer++))
+		log_name=log/log_$(date +%F)
+		time_down=0			
+		date +%F_%k:%M:%S_IP:"$ipaddr"_PORT:"$port"_DOWN >>"$log_name".txt
+		
+		#Monitor port closing time
+		while !(nc -z $ipaddr $port &>/dev/null)
+		do
+			clear
+			echo -e "\t\t\e[5;31m    WARNING! THE PORT DOWN!\e[0m"
+			echo
+			echo -e "\t\t\tDown $time_down seconds"
+			echo
+			echo -e "\t\t\e[33mInput 'q' to quit the monitor.\e[0m"
+
+			read -s -n1 -t1 button_q
+			((time_down++))
+			if [[ "$button_q" = "q" ]]
+			then
+				echo
+				read -n1 -t3 -s -p "Do you want to quit [Y/N]?" answer
+	               		case $answer in
+				Y|y)
+					echo
+					date +%F_%k:%M:%S_Monitor_down >>"$log_name".txt
+					echo "Port interrupt for $time_down seconds befor quit." >>"$log_name".txt
+					echo
+					echo "The port had down $time_down seconds befor quit."
+					echo "--------------------" >> "$log_name".txt
+					echo
+					echo -e "You can see the detail in "$log_name".txt, bye!"
+					echo
+					exit 0;;
+				N|n)
+					continue
+					;;
+				*)
+					continue
+					;;	
+			esac
+			fi
+		done
+		
+		date +%F_%k:%M:%S_UP >> "$log_name".txt
+		echo "Port interrupt for $time_down seconds,Down $break_times times" >> "$log_name".txt
+		echo "--------------------" >> "$log_name".txt
+		echo "The port is up."
+		echo
+		cat "$log_name".txt|tail -n 5
+		read -t2
+	fi
+done
+}
+####################################################################3
+nc_back(){
+
+local break_times=0
+
+while true
+do
+	if !(nc -z $ipaddr $port &>/dev/null)	
+	then
+		((break_times++))
+		time_down=0
+		log_name=log/log_$(date +%F)
+		date +%F_%k:%M:%S_IP:"$ipaddr"_PORT:"$port"_DOWN >>"$log_name".txt	
+		while !(nc -z $ipaddr $port &>/dev/null)
+		do
+			sleep 1
+			((time_down++))					
+		done
+		date +%F_%k:%M:%S_UP >> "$log_name".txt
+                echo "Port interrupt for $time_down seconds,Down $break_times times" >> "$log_name".txt
+                echo "--------------------" >> "$log_name".txt		
+	fi	
+done
+}
