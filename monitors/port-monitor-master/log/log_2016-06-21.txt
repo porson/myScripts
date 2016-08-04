@@ -1,4 +1,0 @@
-2016-06-21_17:07:25_IP:192.168.56.222_PORT:22_DOWN
-2016-06-21_17:07:31_Monitor_down
-Port interrupt for 5 seconds befor quit.
---------------------
